@@ -12,6 +12,18 @@ from datetime import date
 class AccountMove(models.Model):
     _inherit = 'account.move'
 
+    dt_percepciones = fields.Datetime('Fecha/Hora Percepciones')
+
+    def action_post(self):
+        for rec in self:
+            if rec.move_type in ['out_refund','out_invoice'] and rec.dt_percepciones:
+                for inv_line in rec.invoice_line_ids:
+                    date1 = str(inv_line.write_date)[:19]
+                    date2 = str(rec.dt_percepciones)
+                    if date1 > date2:
+                        raise ValidationError('No se puede confirmar porque antes debe calcular percepciones %s %s'%(date1,date2))
+        return super(AccountMove, self).action_post()
+
     def btn_add_percepciones(self):
         self.ensure_one()
         if self.state not in ['draft','sent']:
@@ -33,6 +45,8 @@ class AccountMove(models.Model):
                     'amount': line.amount_currency * sign,
                     'new_tax': False,
                     }
+            if line.tax_line_id.tax_group_id and line.tax_line_id.tax_group_id.tax_type == 'withholdings':
+                continue
             line_id = self.env['percepciones.line.wizard'].create(vals_line)
         for perception in self.partner_id.perception_ids:
             if self.move_type == 'out_invoice':

@@ -1,6 +1,7 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 from odoo import fields, models, api, _, Command
 from odoo.exceptions import ValidationError
+from datetime import datetime
 
 class PercepcionesWizard(models.TransientModel):
     _name = 'percepciones.wizard'
@@ -49,7 +50,7 @@ class PercepcionesWizard(models.TransientModel):
                     line_with_tax = move.line_ids.filtered(lambda x: x.tax_line_id == tax_line_id.tax_id)
                     vals = tax_line_id._get_amount_updated_values()
                     line_with_tax.write(vals)
-
+        move.dt_percepciones = str(datetime.now())[:19]
 
     def add_tax_and_new(self):
         self.add_tax()
