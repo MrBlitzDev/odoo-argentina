@@ -146,6 +146,7 @@ result = withholdable_base_amount * 0.10
                 if payment_group.search(domain):
                     raise ValidationError(tax.withholding_user_error_message)
             vals = tax.get_withholding_vals(payment_group)
+            #raise ValidationError(str(vals))
 
             # we set computed_withholding_amount, hacemos round porque
             # si no puede pasarse un valor con mas decimales del que se ve
@@ -251,8 +252,8 @@ result = withholdable_base_amount * 0.10
             from_relative_delta = relativedelta(day=1, month=1)
         from_date = to_date + from_relative_delta
         common_previous_domain += [
-            ('payment_date', '<=', to_date),
-            ('payment_date', '>=', from_date),
+            ('date', '<=', to_date),
+            ('date', '>=', from_date),
         ]
 
         previous_payment_groups_domain = [
@@ -294,7 +295,6 @@ result = withholdable_base_amount * 0.10
         if self.withholding_accumulated_payments:
             previos_payment_groups_domain, previos_payments_domain = (
                 self.get_period_payments_domain(payment_group))
-            #raise ValidationError('%s %s'%(previos_payment_groups_domain, previos_payments_domain))
             same_period_payments = self.env['account.payment.group'].search(
                 previos_payment_groups_domain)
 
