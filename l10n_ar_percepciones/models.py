@@ -35,14 +35,10 @@ class AccountMove(models.Model):
             }
         wizard_id = self.env['percepciones.wizard'].create(vals)
         for line in self.line_ids.filtered(lambda x: x.tax_line_id):
-            if self.move_type == 'out_invoice':
-                sign = -1
-            else:
-                sign = 1
             vals_line = {
                     'invoice_tax_id': wizard_id.id,
                     'tax_id': line.tax_line_id.id,
-                    'amount': line.amount_currency * sign,
+                    'amount': line.amount_currency,
                     'new_tax': False,
                     }
             if line.tax_line_id.tax_group_id and line.tax_line_id.tax_group_id.tax_type == 'withholdings':
@@ -53,11 +49,11 @@ class AccountMove(models.Model):
                 sign = 1
             else:
                 sign = -1
-            amount = self.amount_untaxed * perception.percent / 100 * sign
+            amount = self.amount_untaxed * perception.percent / 100 
             vals_line = {
                     'invoice_tax_id': wizard_id.id,
                     'tax_id': perception.tax_id.id,
-                    'amount': amount,
+                    'amount': amount * sign,
                     'new_tax': True,
                     }
             line_id = self.env['percepciones.line.wizard'].search([('invoice_tax_id','=',wizard_id.id),('tax_id','=',perception.tax_id.id)])
@@ -69,11 +65,11 @@ class AccountMove(models.Model):
                     sign = 1
                 else:
                     sign = -1
-                amount = self.amount_untaxed * perception.percent / 100 * sign
+                amount = self.amount_untaxed * perception.percent / 100 
                 vals_line = {
                     'invoice_tax_id': wizard_id.id,
                     'tax_id': perception.tax_id.id,
-                    'amount': amount,
+                    'amount': amount * sign,
                     'new_tax': True,
                     }
                 line_id = self.env['percepciones.line.wizard'].search([('invoice_tax_id','=',wizard_id.id),('tax_id','=',perception.tax_id.id)])

@@ -74,20 +74,21 @@ class PercepcionesLineWizard(models.TransientModel):
 
     def _get_amount_updated_values(self):
         debit = credit = 0
-        if self.invoice_tax_id.move_id.move_type == "in_invoice":
-            if self.amount > 0:
-                debit = self.amount
-            elif self.amount < 0:
-                credit = -self.amount
-        else:  # For refund
+        if self.invoice_tax_id.move_id.move_type == "out_invoice":
             if self.amount > 0:
                 credit = self.amount
             elif self.amount < 0:
-                debit = -self.amount
+                debit = abs(self.amount)
+        else:  # For refund
+            #if self.amount > 0:
+            #    credit = self.amount
+            #elif self.amount < 0:
+            credit = 0
+            debit = abs(self.amount)
 
         # If multi currency enable
         move_currency = self.invoice_tax_id.move_id.currency_id
         company_currency = self.invoice_tax_id.move_id.company_currency_id
         if move_currency and move_currency != company_currency:
             return {'amount_currency': self.amount if debit else -self.amount}
-        return {'debit': debit, 'credit': credit, 'balance': self.amount if debit else -self.amount}
+        return {'debit': debit, 'credit': credit, 'balance': abs(self.amount) if debit else -self.amount}
