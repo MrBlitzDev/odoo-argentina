@@ -146,7 +146,6 @@ result = withholdable_base_amount * 0.10
                 if payment_group.search(domain):
                     raise ValidationError(tax.withholding_user_error_message)
             vals = tax.get_withholding_vals(payment_group)
-            #raise ValidationError(str(vals))
 
             # we set computed_withholding_amount, hacemos round porque
             # si no puede pasarse un valor con mas decimales del que se ve
@@ -314,7 +313,12 @@ result = withholdable_base_amount * 0.10
                 for prev_payment in prev_payments:
                     if prev_payment.payment_group_id.payment_date.year == payment_group.payment_date.year and prev_payment.payment_group_id.payment_date.month == payment_group.payment_date.month and \
                             prev_payment.payment_group_id.payment_date.day <= payment_group.payment_date.day:
-                                previous_withholding_amount += prev_payment.amount
+                                tax_factor = 1
+                                if prev_payments.payment_group_id:
+                                    pg_id = prev_payments.payment_group_id
+                                    for matched_move in payment_group.debt_move_line_ids:
+                                        tax_factor = matched_move.move_id._get_tax_factor()
+                                previous_withholding_amount += prev_payment.amount * tax_factor
 
             #raise ValidationError('%s %s'%(previous_withholding_amount,previos_payments_domain))
 
@@ -357,7 +361,7 @@ result = withholdable_base_amount * 0.10
             else:
                 period_withholding_amount = total_amount
 
-        return {
+        result = {
             'withholdable_invoiced_amount': withholdable_invoiced_amount,
             'withholdable_advanced_amount': withholdable_advanced_amount,
             'accumulated_amount': accumulated_amount,
@@ -372,3 +376,4 @@ result = withholdable_base_amount * 0.10
             'automatic': True,
             'comment': comment,
         }
+        return result
