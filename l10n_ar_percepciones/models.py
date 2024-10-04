@@ -33,22 +33,24 @@ class AccountMove(models.Model):
         vals = {
             'move_id': self.id,
             }
+        sign = 1
+        if self.move_type == 'out_refund':
+            sign = -1
         wizard_id = self.env['percepciones.wizard'].create(vals)
         for line in self.line_ids.filtered(lambda x: x.tax_line_id):
             vals_line = {
                     'invoice_tax_id': wizard_id.id,
                     'tax_id': line.tax_line_id.id,
-                    'amount': line.amount_currency,
                     'new_tax': False,
                     }
+            if self.move_type == 'out_invoice':
+                vals_line['amount'] = line.amount_currency * (-1)
+            else:
+                vals_line['amount'] = line.amount_currency 
             if line.tax_line_id.tax_group_id and line.tax_line_id.tax_group_id.tax_type == 'withholdings':
                 continue
             line_id = self.env['percepciones.line.wizard'].create(vals_line)
         for perception in self.partner_id.perception_ids:
-            if self.move_type == 'out_invoice':
-                sign = 1
-            else:
-                sign = -1
             amount = self.amount_untaxed * perception.percent / 100 
             vals_line = {
                     'invoice_tax_id': wizard_id.id,
@@ -61,10 +63,6 @@ class AccountMove(models.Model):
                 line_id = self.env['percepciones.line.wizard'].create(vals_line)
         if self.partner_shipping_id:
             for perception in self.partner_shipping_id.perception_ids:
-                if self.move_type == 'out_invoice':
-                    sign = 1
-                else:
-                    sign = -1
                 amount = self.amount_untaxed * perception.percent / 100 
                 vals_line = {
                     'invoice_tax_id': wizard_id.id,
