@@ -3,7 +3,7 @@
     'author': "A2 Systems,Moldeo Interactive",
     'category': 'Localization/Argentina',
     'depends': [
-        'l10n_ar_afipws_fe',
+        'l10n_ar',
         'account_payment_group'
     ],
     'installable': True,
