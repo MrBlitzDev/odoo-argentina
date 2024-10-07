@@ -11,6 +11,25 @@ _logger = logging.getLogger(__name__)
 class AccountPayment(models.Model):
     _inherit = "account.payment"
 
+    @api.depends('paired_internal_transfer_payment_id')
+    def _compute_is_internal_transfer(self):
+        for rec in self:
+            res = False
+            if rec.paired_internal_transfer_payment_id:
+                res = True
+            rec.is_internal_transfer = res
+
+    @api.depends('reconciled_invoice_ids')
+    def _compute_invoice_line_ids(self):
+        for rec in self:
+            ids = []
+            for inv in rec.reconciled_invoice_ids:
+                for line in inv.line_ids:
+                    if line.account_id.account_type in ['asset_receivable','liability_payable']:
+                        ids.append(line.id)
+            rec.invoice_line_ids = [(6,0,ids)]
+
+    invoice_line_ids = fields.Many2one('account.move.line','invoice_line_ids',store=True,compute=_compute_invoice_line_ids)
     payment_group_id = fields.Many2one(
         'account.payment.group',
         'Recibo',
@@ -63,6 +82,7 @@ class AccountPayment(models.Model):
         related='company_id.currency_id',
         string='Company currency',
     )
+    is_internal_transfer = fields.Boolean('Is Transfer?',store=True,compute=_compute_is_internal_transfer,default=False)
 
 
     @api.model
@@ -78,7 +98,11 @@ class AccountPayment(models.Model):
 
     def _get_blocking_l10n_latam_warning_msg(self):
         msgs = []
-        for rec in self.filtered('l10n_latam_check_id'):
+        return msgs
+
+    def _X_get_blocking_l10n_latam_warning_msg(self):
+        msgs = []
+        for rec in self.filtered('l10n_latam_move_check_ids'):
             if rec.currency_id and not rec.currency_id.is_zero(rec.l10n_latam_check_id.amount - rec.amount):
                 msgs.append(_(
                     'The amount of the payment (%s) does not match the amount of the selected check (%s). '
@@ -339,7 +363,7 @@ class AccountPayment(models.Model):
             payment.payment_group_id.post()
         return payment
 
-    @api.depends('invoice_line_ids', 'payment_type', 'partner_type', 'partner_id')
+    @api.depends('payment_type', 'partner_type', 'partner_id')
     def _compute_destination_account_id(self):
         """
         If we are paying a payment gorup with paylines, we use account

@@ -531,10 +531,17 @@ class AccountPaymentGroup(models.Model):
             rec.matched_move_line_ids = lines - payment_lines
 
     # @api.depends('payment_ids.move_line_ids')
-    @api.depends('payment_ids.invoice_line_ids')
+    @api.depends('payment_ids.invoice_ids')
     def _compute_move_lines(self):
         for rec in self:
-            rec.move_line_ids = rec.payment_ids.mapped('invoice_line_ids')
+            ids = []
+            # rec.move_line_ids = rec.payment_ids.mapped('invoice_line_ids')
+            for payment in rec.payment_ids:
+                for inv in payment.invoice_ids:
+                    for line in inv.line_ids:
+                        if line.account_id.account_type in ['asset_receivable','liability_payable']:
+                            ids.append(line.id)
+            rec.move_line_ids = [(6,0,ids)]
 
     def _compute_account_internal_type(self):
         for rec in self:
