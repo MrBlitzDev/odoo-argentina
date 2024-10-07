@@ -1,8 +1,8 @@
 # © 2016 ADHOC SA
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 {
-    "name": "Account Payment with Multiple methods",
-    "version": "17.0.1.0.0",
+    "name": "Pago de deudas con múltiples métodos",
+    "version": "18.0.1.0.0",
     "category": "Accounting",
     "author": "A2 Systems,ADHOC SA,",
     "license": "AGPL-3",
