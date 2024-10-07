@@ -7,7 +7,6 @@
     'license': 'AGPL-3',
     'summary': '',
     'depends': [
-        'l10n_ar_afipws',
         'uom',
         'l10n_latam_invoice_document',
         'l10n_ar',
