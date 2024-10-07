@@ -46,22 +46,6 @@ class AccountPayment(models.Model):
                 ('id', '!=', rec.journal_id.id),
             ]
             rec.destination_journal_ids = rec.journal_ids.search(domain)
-            #if rec.journal_id:
-            #    rec.currency_id = (
-            #    rec.journal_id.currency_id or rec.company_id.currency_id)
-            #    # Set default payment method
-            #    # (we consider the first to be the default one)
-            #    payment_methods = (
-            #        rec.payment_type == 'inbound' and
-            #        rec.journal_id.inbound_payment_method_line_ids or
-            #        rec.journal_id.outbound_payment_method_line_ids)
-            #    # si es una transferencia y no hay payment method de origen,
-            #    # forzamos manual
-            #    if not payment_methods and rec.payment_type == 'transfer':
-            #       payment_methods = self.env.ref(
-            #            'account.account_payment_method_manual_out')
-            #    rec.payment_method_line_id = (
-            #        payment_methods and payment_methods[0] or False)
 
     def get_journals_domain(self):
         """
@@ -143,7 +127,7 @@ class AccountPayment(models.Model):
         """
         return True
 
-    @api.depends('invoice_line_ids', 'payment_type', 'partner_type', 'partner_id')
+    @api.depends('payment_type', 'partner_type', 'partner_id')
     def _compute_destination_account_id(self):
         """
         We send with_company on context so payments can be created from parent
@@ -154,7 +138,7 @@ class AccountPayment(models.Model):
         #for rec in self.filtered(
         #        lambda x: not x.invoice_line_ids and x.payment_type != 'transfer'):
         for rec in self.filtered(
-                lambda x: not x.invoice_line_ids and not x.is_internal_transfer):
+                lambda x: not x.is_internal_transfer):
             partner = self.partner_id.with_context(
                 with_company=self.company_id.id)
             partner = self.partner_id
