@@ -24,16 +24,6 @@
                 <attribute name="widget">many2one</attribute>
                 <attribute name="options">{'no_create': True, 'no_open': True}</attribute>
             </field>
-            <!-- field name="destination_journal_id" position="attributes">
-                <attribute name="domain">[('id', 'in', destination_journal_ids)]</attribute>
-                <attribute name="widget">many2one</attribute>
-                <attribute name="options">{'no_create': True, 'no_open': True}</attribute>
-            </field -->
-            <!-- field name="payment_method_line_id" position="attributes">
-                <attribute name="domain">[('id', 'in', payment_method_ids)]</attribute>
-                <attribute name="widget">many2one</attribute>
-                <attribute name="options">{'no_create': True, 'no_open': True}</attribute>
-            </field -->
             <field name="partner_id" position="attributes">
                 <attribute name="domain">[(partner_type, '=', True)]</attribute>
             </field>
