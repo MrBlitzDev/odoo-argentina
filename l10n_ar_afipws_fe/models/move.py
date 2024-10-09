@@ -587,7 +587,7 @@ print "Observaciones:", wscdc.Obs
 
             # create the invoice internally in the helper
             if afip_ws == 'wsfe':
-                inv.l10n_ar_currency_rate = moneda_ctz
+                inv.invoice_currency_rate = moneda_ctz
                 ws.CrearFactura(
                     concepto, tipo_doc, nro_doc, doc_afip_code, pos_number,
                     cbt_desde, cbt_hasta, imp_total, imp_tot_conc, imp_neto,
@@ -902,7 +902,7 @@ print "Observaciones:", wscdc.Obs
                     "nroCmp": int(rec.name.split('-')[2]),
                     "importe": rec.amount_total,
                     "moneda": rec.currency_id.l10n_ar_afip_code,
-                    "ctz": rec.l10n_ar_currency_rate,
+                    "ctz": rec.invoice_currency_rate,
                     "tipoDocRec": int(rec.partner_id.l10n_latam_identification_type_id.l10n_ar_afip_code),
                     "nroDocRec": int(rec.partner_id.vat),
                     "tipoCodAut": 'E',
