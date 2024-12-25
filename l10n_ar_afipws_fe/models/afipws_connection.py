@@ -30,6 +30,7 @@ class AfipwsConnection(models.Model):
         ('wsfex', 'Exportación -con detalle- RG2758 (WSFEXv1)'),
         ('wsbfe', 'Bono Fiscal -con detalle- RG2557 (WSBFE)'),
         ('wscdc', 'Constatación de Comprobantes (WSCDC)'),
+        ('wsct', 'Factura Electrónica Comprobantes de Turismo'),
         ('ws_sr_padron_a4', 'Servicio de Consulta de Padrón Alcance 4'),
         ('ws_sr_padron_a5', 'Servicio de Consulta de Padrón Alcance 5'),
         ('ws_sr_padron_a10', 'Servicio de Consulta de Padrón Alcance 10'),
@@ -61,6 +62,10 @@ class AfipwsConnection(models.Model):
         elif afip_ws == "wsbfe":
             from pyafipws.wsbfev1 import WSBFEv1
             ws = WSBFEv1()
+        elif afip_ws == "wsct":
+            from pyafipws.wsct import WSCT
+            ws = WSCT()
+            
         return ws
 
     @api.model
@@ -107,4 +112,12 @@ class AfipwsConnection(models.Model):
             else:
                 afip_ws_url = (
                     'https://wswhomo.afip.gov.ar/WSCDC/service.asmx?WSDL')
+        elif afip_ws == 'wsct':
+            if environment_type == 'production':
+                afip_ws_url = (
+                    'https://serviciosjava.afip.gob.ar/wsct/CTService?wsdl')
+            else:
+                afip_ws_url = (
+                    'https://fwshomo.afip.gov.ar/wsct/CTService?wsdl')
+
         return afip_ws_url

@@ -530,7 +530,9 @@ print "Observaciones:", wscdc.Obs
             concepto = tipo_expo = int(inv.l10n_ar_afip_concept)
 
             fecha_cbte = inv.invoice_date
-            if afip_ws != 'wsmtxca':
+            if afip_ws == 'wsct':
+                fecha_cbte = inv.invoice_date.strftime("%Y-%m-%d")
+            elif afip_ws != 'wsmtxca':
                 fecha_cbte = inv.invoice_date.strftime('%Y%m%d')
 
             mipyme_fce = int(doc_afip_code) in [201, 206, 211]
@@ -574,7 +576,7 @@ print "Observaciones:", wscdc.Obs
             # imp_iva = str("%.2f" % (inv.amount_total - (inv.amount_untaxed + inv.other_taxes_amount)))
             imp_iva = str("%.2f" % (inv.vat_amount))
             # se usaba para wsca..
-            # imp_subtotal = str("%.2f" % inv.amount_untaxed)
+            imp_subtotal = str("%.2f" % inv.amount_untaxed)
             imp_op_ex = str("%.2f" % inv.vat_exempt_base_amount)
             moneda_id = inv.currency_id.l10n_ar_afip_code
             #moneda_ctz = round(1/inv.currency_id.rate,2)
@@ -582,6 +584,7 @@ print "Observaciones:", wscdc.Obs
             if not moneda_id:
                 raise ValidationError('No esta definido el codigo AFIP en la moneda')
 
+            pais_dst_cmp = country.l10n_ar_afip_code            
 
             CbteAsoc = inv.get_related_invoices_data()
 
@@ -659,7 +662,7 @@ print "Observaciones:", wscdc.Obs
                     commercial_partner.zip or '',
                     commercial_partner.city or '',
                 ])
-                pais_dst_cmp = commercial_partner.country_id.l10n_ar_afip_code
+                
                 ws.CrearFactura(
                     doc_afip_code, pos_number, cbte_nro, fecha_cbte,
                     imp_total, tipo_expo, permiso_existente, pais_dst_cmp,
@@ -714,21 +717,42 @@ print "Observaciones:", wscdc.Obs
                     ws.AgregarOpcional(
                         opcional_id=22,
                         valor=valor)
+                    
+            elif afip_ws == 'wsct':
+                obs = 'Test Factura T'    
 
-            # TODO ver si en realidad tenemos que usar un vat pero no lo
-            # subimos
+                # Si el cliente es del exterior se busca el CUIT de la tabla res_country
+                if country.code != 'AR':
+                    if commercial_partner.is_company:
+                        cuit_pais_cliente = country.l10n_ar_legal_entity_vat
+                    else:
+                        cuit_pais_cliente = country.l10n_ar_natural_vat    
+                else:
+                    cuit_pais_cliente = nro_doc
+
+                tax_reintegro = self.extract_tax(inv.move_tax_ids, '-vat')
+                    
+                ws.CrearFactura(
+                    tipo_doc, cuit_pais_cliente, doc_afip_code, pos_number, cbte_nro, 
+                    imp_total, imp_tot_conc, imp_neto, imp_subtotal,                   
+                    imp_trib, imp_op_ex, "%.2f" % tax_reintegro.tax_amount,
+                    fecha_cbte, commercial_partner.l10n_ar_afip_responsibility_type_id.code, 
+                    pais_dst_cmp, commercial_partner.country_id.display_name, 
+                    1, moneda_id, round(moneda_ctz,2), obs
+                )
+
+            # TODO ver si en realidad tenemos que usar un vat pero no lo subimos
             if afip_ws not in ['wsfex', 'wsbfe']:
-                #for vat in inv.move_tax_ids:vat_taxable_ids:
-                for vat in inv.move_tax_ids:
-                    if vat.tax_id.tax_group_id.tax_type == 'vat' and vat.tax_id.tax_group_id.l10n_ar_vat_afip_code != '2':
-                            _logger.info('Adding VAT %s' % vat.tax_id.tax_group_id.name)
-                            ws.AgregarIva(
-                                vat.tax_id.tax_group_id.l10n_ar_vat_afip_code,
-                                "%.2f" % vat.base_amount,
-                                # "%.2f" % abs(vat.base_amount),
-                                "%.2f" % vat.tax_amount,
-                            )
-
+                tax = self.extract_tax(inv.move_tax_ids, 'vat')                
+                
+                _logger.info('Adding VAT %s' % tax.tax_id.tax_group_id.name)
+                ws.AgregarIva(
+                    tax.tax_id.tax_group_id.l10n_ar_vat_afip_code,
+                    "%.2f" % tax.base_amount,
+                    # "%.2f" % abs(vat.base_amount),
+                    "%.2f" % tax.tax_amount,
+                )
+                        
 
             if CbteAsoc:
                 # fex no acepta fecha
@@ -757,8 +781,6 @@ print "Observaciones:", wscdc.Obs
                 fecha_desde = str(year) + str(month).zfill(2) + '01'
                 fecha_hasta = str(year) + str(month).zfill(2) + str(day).zfill(2)
                 ws.AgregarPeriodoComprobantesAsociados(fecha_desde,fecha_hasta)
-
-
 
             # analize line items - invoice detail
             # wsfe do not require detail
@@ -792,7 +814,7 @@ print "Observaciones:", wscdc.Obs
                         #             line.product_id.uom_id.name)))
                         # u_mtx = (
                         #     line.product_id.uom_id.afip_code or
-                        #     line.uom_id.afip_code)
+                        #     line.uom_id.afip_code)                        
                         iva_id = line.vat_tax_id.tax_group_id.afip_code
                         vat_taxes_amounts = line.vat_tax_id.compute_all(
                             line.price_unit, inv.currency_id, line.quantity,
@@ -811,11 +833,18 @@ print "Observaciones:", wscdc.Obs
                             sec = ""  # Código de la Secretaría (TODO usar)
                             ws.AgregarItem(
                                 codigo, sec, ds, qty, umed, precio, bonif,
-                                iva_id, importe + imp_iva)
+                                iva_id, importe + imp_iva)                        
                     elif afip_ws == 'wsfex':
                         ws.AgregarItem(
                             codigo, ds, qty, umed, precio, "%.2f" % importe,
-                            bonif)
+                            bonif) 
+                    elif afip_ws == 'wsct':
+                            # TODO Tipo y cod_tur HARDCODEADOS (?)
+                            vat = self.extract_tax(line.tax_ids, 'vat', True)
+                            vat_amount = vat.amount * importe / 100
+                            item_amount = importe + vat_amount
+                            vat_id = vat.tax_group_id.l10n_ar_vat_afip_code
+                            ws.AgregarItem(0, 1, codigo, ds, vat_id, "%.2f" % vat_amount, "%.2f" % item_amount)
 
             # Request the authorization! (call the AFIP webservice method)
             vto = None
@@ -832,6 +861,9 @@ print "Observaciones:", wscdc.Obs
                     vto = ws.FchVencCAE
                 elif afip_ws == 'wsbfe':
                     ws.Authorize(inv.id)
+                    vto = ws.Vencimiento
+                elif afip_ws == 'wsct':
+                    ws.CAESolicitar()
                     vto = ws.Vencimiento
             except SoapFault as fault:
                 msg = 'Falla SOAP %s: %s' % (
@@ -859,10 +891,17 @@ print "Observaciones:", wscdc.Obs
             # escribe aca si no hay errores
             _logger.info('CAE solicitado con exito. CAE: %s. Resultado %s' % (
                 ws.CAE, ws.Resultado))
+            
             if afip_ws == 'wsbfe':
                 vto = datetime.strftime(
                     datetime.strptime(vto, '%d/%m/%Y'), '%Y%m%d')
+                
+            if afip_ws == 'wsct':
+                vto = datetime.strptime(vto, '%Y/%m/%d')
+                vto = vto.strftime('%Y%m%d')
+            
             vto = vto[:4]+'-'+vto[4:6]+'-'+vto[6:8]
+
             inv.write({
                 'afip_auth_mode': 'CAE',
                 'afip_auth_code': ws.CAE,
@@ -882,6 +921,17 @@ print "Observaciones:", wscdc.Obs
             # afip de respuesta
             inv._cr.commit()
 
+    def extract_tax(self, tax_ids, tax_type, isLine = False):
+        if isLine:
+            for tax in tax_ids:
+                if (tax.tax_group_id.tax_type == tax_type 
+                    and tax.tax_group_id.l10n_ar_vat_afip_code != '2'):
+                    return tax
+        else:
+            for tax in tax_ids:
+                if (tax.tax_id.tax_group_id.tax_type == tax_type 
+                    and tax.tax_id.tax_group_id.l10n_ar_vat_afip_code != '2'):
+                    return tax
 
     def _compute_qrcode(self):
         for rec in self:
@@ -894,7 +944,7 @@ print "Observaciones:", wscdc.Obs
                     border=4,
                 )
                 vals_qr = {
-                    "ver": 1,
+                    "ver":1,
                     "fecha": str(rec.invoice_date),
                     "cuit": int(rec.company_id.partner_id.vat),
                     "ptoVta": rec.journal_id.l10n_ar_afip_pos_number,
@@ -906,9 +956,18 @@ print "Observaciones:", wscdc.Obs
                     "tipoDocRec": int(rec.partner_id.l10n_latam_identification_type_id.l10n_ar_afip_code),
                     "nroDocRec": int(rec.partner_id.vat),
                     "tipoCodAut": 'E',
-                    "codAut": rec.afip_auth_code,
+                    "codAut": int(rec.afip_auth_code),
                 }
-                rec.fe_qr_url = vals_qr
+
+                # Convertir el diccionario a JSON
+                json_data = json.dumps(vals_qr, separators=(',', ':'))
+                # Codificar el JSON en Base64
+                encoded_data = base64.b64encode(json_data.encode()).decode()
+                # Construir la URL completa
+                afip_base_url = "https://www.afip.gob.ar/fe/qr/?p="
+                rec.fe_qr_url = afip_base_url + encoded_data
+
+                #rec.fe_qr_url = vals_qr
                 qr.add_data(rec.fe_qr_url)
                 qr.make(fit=True)
                 img = qr.make_image()
@@ -919,4 +978,3 @@ print "Observaciones:", wscdc.Obs
             else:
                 rec.fe_qr_url = ''
                 rec.qr_code = None
-

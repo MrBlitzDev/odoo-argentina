@@ -112,6 +112,9 @@ class L10nLatamDocumentType(models.Model):
             elif afip_ws in ["wsfex", 'wsbfe']:
                 last = ws.GetLastCMP(
                     document_type, pos_number)
+            elif afip_ws == 'wsct':
+                last = ws.ConsultarUltimoComprobanteAutorizado(
+                    document_type, pos_number)
             else:
                 return(_('AFIP WS %s not implemented') % afip_ws)
         except ValueError as error:
