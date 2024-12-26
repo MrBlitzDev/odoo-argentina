@@ -29,6 +29,7 @@ class AccountJournal(models.Model):
             ('wsmtxca', 'Mercado interno -con detalle- RG2904 (WSMTXCA)'),
             ('wsfex', 'Exportación -con detalle- RG2758 (WSFEXv1)'),
             ('wsbfe', 'Bono Fiscal -con detalle- RG2557 (WSBFE)'),
+            ('wsct', 'Factura Electrónica Comprobantes de Turismo'),
         ]
 
     afip_ws = fields.Selection(
@@ -158,6 +159,9 @@ class AccountJournal(models.Model):
             ret = ws.GetParamPtosVenta()
         elif afip_ws == 'wsfe':
             ret = ws.ParamGetPtosVenta(sep=" ")
+        # elif afip_ws == 'wsct':
+        #     ret = ws.ConsultarPuntosVenta() 
+        # wsct queda comentado porque pincha
         else:
             raise UserError(_(
                 'Get point of sale for ws %s is not implemented yet') % (
@@ -179,6 +183,8 @@ class AccountJournal(models.Model):
             ret = ws.ParamGetTiposCbte(sep=",")
         elif afip_ws == 'wsbfe':
             ret = ws.GetParamTipoCbte()
+        elif afip_ws == 'wsct':
+            ret = ws.ConsultarTiposComprobante()
         else:
             raise UserError(_(
                 'Get document types for ws %s is not implemented yet') % (
