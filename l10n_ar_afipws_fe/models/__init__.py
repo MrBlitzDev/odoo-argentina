@@ -11,3 +11,4 @@ from . import res_currency
 from . import res_company
 from . import ir_sequence
 from . import account_journal
+from . import product_category

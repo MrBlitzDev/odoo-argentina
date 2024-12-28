@@ -844,7 +844,14 @@ print "Observaciones:", wscdc.Obs
                             vat_amount = vat.amount * importe / 100
                             item_amount = importe + vat_amount
                             vat_id = vat.tax_group_id.l10n_ar_vat_afip_code
-                            ws.AgregarItem(0, 1, codigo, ds, vat_id, "%.2f" % vat_amount, "%.2f" % item_amount)
+
+                            product_category = line.product_id.categ_id
+                            item_type_t = product_category.item_type_t
+                            cod_tur = product_category.cod_tur
+
+                            ws.AgregarItem(
+                                item_type_t, cod_tur, codigo, ds, 
+                                vat_id, "%.2f" % vat_amount, "%.2f" % item_amount)
 
             # Request the authorization! (call the AFIP webservice method)
             vto = None
