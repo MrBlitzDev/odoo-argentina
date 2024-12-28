@@ -8,6 +8,9 @@ from odoo.exceptions import UserError,ValidationError
 from odoo.tools.safe_eval import safe_eval
 import datetime
 from datetime import date
+import logging
+
+_logger = logging.getLogger(__name__) 
 
 from pyafipws.ws_sr_padron import WSSrPadronA5
 

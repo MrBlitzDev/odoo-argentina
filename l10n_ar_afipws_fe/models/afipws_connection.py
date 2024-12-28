@@ -35,6 +35,7 @@ class AfipwsConnection(models.Model):
         ('ws_sr_padron_a5', 'Servicio de Consulta de Padrón Alcance 5'),
         ('ws_sr_padron_a10', 'Servicio de Consulta de Padrón Alcance 10'),
         ('ws_sr_padron_a100', 'Servicio de Consulta de Padrón Alcance 100'),
+        ('ws_sr_constancia_inscripcion', 'Consulta Constancia de Inscripcion'),
     ],
     'AFIP WS',
     required=True,
