@@ -52,6 +52,8 @@ class ResPartner(models.Model):
             vals['imp_ganancias_padron'] = 'EX'
         elif census.monotributo == 'S':
             vals['imp_ganancias_padron'] = 'NC'
+        elif census.monotributo == 'N':
+            vals['imp_ganancias_padron'] = '' # Dejo vacío para que no pinche luego el delete
         else:
             _logger.info(
                 "We couldn't get impuesto a las ganancias from padron, you"
